@@ -1,11 +1,10 @@
-// --- State & Data ---
-let kosts = JSON.parse(localStorage.getItem('kost_data')) || [
-    { id: 1, name: "Emerald Residence", price: 1500000, distance: 0.5, rating: 4.8, image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800", facilities: ["Wifi", "AC", "Laundry", "Cleaning", "Parking"], location: "Kec. Coblong, Bandung", description: "Kost eksklusif dengan fasilitas lengkap dan keamanan 24 jam. Sangat strategis untuk mahasiswa." },
-    { id: 2, name: "Sky Blue Boarding", price: 1200000, distance: 1.2, rating: 4.6, image: "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=800", facilities: ["Wifi", "Kitchen", "Parking", "Security"], location: "Kec. Sukasari, Bandung", description: "Suasana nyaman dan tenang, cocok untuk yang hobi belajar. Dekat dengan pusat perbelanjaan." },
-    { id: 3, name: "Minimalist Loft", price: 1800000, distance: 0.3, rating: 4.9, image: "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800", facilities: ["Wifi", "AC", "Private Bath", "Gym"], location: "Kec. Cicendo, Bandung", description: "Desain interior modern minimalis. Fasilitas premium dengan pemandangan kota." },
-    { id: 4, name: "Cozy Garden Kost", price: 900000, distance: 2.5, rating: 4.4, image: "https://images.unsplash.com/photo-1554995207-c18c203602cb?auto=format&fit=crop&q=80&w=800", facilities: ["Wifi", "Garden", "Kitchen", "Water"], location: "Kec. Lengkong, Bandung", description: "Kost asri dengan taman hijau. Harga terjangkau namun tetap nyaman." }
-];
+// --- Supabase Configuration ---
+const SB_URL = "https://fbnukudaifwgymcwkxtp.supabase.co";
+const SB_KEY = "sb_publishable_GF9pNYXBur0A642Elh5_uA_M_ImgGlf";
+const supabase = window.supabase.createClient(SB_URL, SB_KEY);
 
+// --- State & Data ---
+let kosts = [];
 let users = JSON.parse(localStorage.getItem('kost_users')) || [
     { username: 'Student', password: '12345', name: 'HELLO USER', role: 'mahasiswa' },
     { username: 'Owner', password: '54321', name: 'HELLO ADMIN', role: 'pemilik' }
@@ -15,6 +14,18 @@ let currentUser = JSON.parse(localStorage.getItem('kost_session')) || null;
 let favorites = JSON.parse(localStorage.getItem('kost_favs')) || [];
 let activeFilters = new Set(['all']);
 let searchQuery = "";
+
+// --- Data Synchronization ---
+const fetchKosts = async () => {
+    const { data, error } = await supabase.from('kosts').select('*').order('created_at', { ascending: false });
+    if (error) {
+        console.error("Error fetching kosts:", error);
+        return;
+    }
+    kosts = data;
+    renderKosts();
+    renderAdminTable();
+};
 
 // --- Utilities ---
 const formatPrice = (num) => `Rp ${parseInt(num).toLocaleString('id-ID')}`;
@@ -118,18 +129,20 @@ const switchView = (view) => {
 };
 
 // --- Admin CRUD Logic ---
-const renderAdminTable = () => {
-    const tbody = document.getElementById('admin-table-body');
+window.renderAdminTable = () => {
+    const tbody = document.getElementById('admin-kost-list');
     if (!tbody) return;
     tbody.innerHTML = kosts.map(kost => `
         <tr>
-            <td><span style="font-weight:600">${kost.name}</span></td>
+            <td>${kost.name}</td>
             <td>${kost.location}</td>
             <td>${formatPrice(kost.price)}</td>
-            <td><span style="color:#15803d; font-weight:600">Aktif</span></td>
-            <td style="display:flex; gap:8px;">
-                <button class="action-icon edit" onclick="editKost(${kost.id})"><i data-lucide="edit-3"></i></button>
-                <button class="action-icon delete" onclick="deleteKost(${kost.id})"><i data-lucide="trash-2"></i></button>
+            <td><span class="status-badge">Aktif</span></td>
+            <td>
+                <div style="display:flex; gap:8px;">
+                    <button class="action-icon edit" onclick="editKost(${kost.id})"><i data-lucide="edit-3"></i></button>
+                    <button class="action-icon delete" onclick="deleteKost(${kost.id})"><i data-lucide="trash-2"></i></button>
+                </div>
             </td>
         </tr>
     `).join('');
@@ -155,16 +168,16 @@ window.editKost = (id) => {
     document.getElementById('modal-overlay').classList.add('active');
 };
 
-window.deleteKost = (id) => {
-    if (confirm("Are you sure?")) {
-        kosts = kosts.filter(k => k.id !== id);
-        saveData();
-        renderAdminTable();
-        showToast('Kost deleted successfully');
+window.deleteKost = async (id) => {
+    if (!confirm('Are you sure you want to delete this listing?')) return;
+    const { error } = await supabase.from('kosts').delete().eq('id', id);
+    if (error) {
+        showToast('Error deleting kost', 'error');
+        return;
     }
+    showToast('Deleted successfully');
+    fetchKosts();
 };
-
-const saveData = () => localStorage.setItem('kost_data', JSON.stringify(kosts));
 
 // --- Rendering Kosts ---
 const renderKosts = (view = 'dashboard') => {
@@ -258,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 5500);
 
     if (currentUser) showApp(currentUser);
+    fetchKosts();
 
     // Filter Pills
     document.querySelectorAll('#quick-filters .pill').forEach(pill => {
@@ -314,29 +328,35 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('close-detail').onclick = () => document.getElementById('detail-overlay').classList.remove('active');
 
     // Admin Form
-    document.getElementById('kost-form').onsubmit = (e) => {
+    document.getElementById('kost-form').onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('form-id').value;
         const newKost = {
-            id: id ? parseInt(id) : Date.now(),
             name: document.getElementById('form-name').value,
             location: document.getElementById('form-location').value,
-            price: document.getElementById('form-price').value,
-            distance: document.getElementById('form-distance').value,
+            price: parseFloat(document.getElementById('form-price').value),
+            distance: parseFloat(document.getElementById('form-distance').value),
             facilities: document.getElementById('form-facilities').value.split(',').map(f => f.trim()),
             description: document.getElementById('form-desc').value,
             image: document.getElementById('image-preview').src || "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800",
             rating: 4.5
         };
+
+        let result;
         if (id) {
-            const idx = kosts.findIndex(k => k.id === parseInt(id));
-            kosts[idx] = newKost;
+            result = await supabase.from('kosts').update(newKost).eq('id', id);
         } else {
-            kosts.push(newKost);
+            result = await supabase.from('kosts').insert([newKost]);
         }
-        saveData(); renderAdminTable();
-        document.getElementById('modal-overlay').classList.remove('active');
-        showToast('Saved successfully');
+
+        if (result.error) {
+            showToast('Error saving kost', 'error');
+            console.error(result.error);
+        } else {
+            showToast('Saved successfully');
+            document.getElementById('modal-overlay').classList.remove('active');
+            fetchKosts();
+        }
     };
 });
 

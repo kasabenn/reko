@@ -11,6 +11,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="/src/style.css">
     <!-- Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
@@ -185,11 +186,15 @@
                         </div>
                     </div>
 
-                    <div class="management-section glass">
-                        <div class="section-header">
-                            <h2>Manage Listings</h2>
-                            <button class="btn-gradient" onclick="openModal()">Add New Kost</button>
-                        </div>
+                    <div class="admin-header" style="margin-top: 40px;">
+                        <h2 style="font-size: 24px;">Manage Listings</h2>
+                        <button class="btn-primary btn-glow" onclick="openModal()">
+                            <i data-lucide="plus" style="width:18px; height:18px; margin-right:8px"></i>
+                            Add New Kost
+                        </button>
+                    </div>
+
+                    <div class="admin-table-container">
                         <table class="admin-table">
                             <thead>
                                 <tr>
@@ -200,9 +205,7 @@
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-table-body">
-                                <!-- Rows injected by JS -->
-                            </tbody>
+                            <tbody id="admin-kost-list"></tbody>
                         </table>
                     </div>
                 </section>
