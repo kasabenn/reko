@@ -358,6 +358,23 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchKosts();
         }
     };
+
+    // Image Preview Handling
+    const imageInput = document.getElementById('form-image-input');
+    if (imageInput) {
+        imageInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const preview = document.getElementById('image-preview');
+                    preview.src = event.target.result;
+                    document.getElementById('image-preview-container').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+    }
 });
 
 window.openModal = () => {
