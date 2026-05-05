@@ -36,12 +36,13 @@
     width: 250px;
     height: 250px;
     left: -300px;
-    filter: drop-shadow(0 0 50px rgba(234, 88, 12, 0.6));
-    mix-blend-mode: screen;
+    filter: drop-shadow(0 0 50px rgba(234, 88, 12, 0.8));
+    /* Using clip-path to keep it opaque but remove black edges */
+    clip-path: circle(50% at center); 
     animation: 
         celestialAppear 1.2s ease-out forwards, 
-        sunMerge 2.8s 1s cubic-bezier(0.4, 0, 0.2, 1) forwards,
-        sunPulse 4s infinite alternate ease-in-out;
+        sunMerge 2.8s 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+        celestialVanish 0.1s 4.0s forwards; /* Vanish exactly when they meet */
 }
 
 @keyframes sunPulse {
@@ -55,14 +56,26 @@
     background-image: url('/public/images/moon_realistic.png');
     background-size: cover;
     background-position: center;
-    width: 220px;
-    height: 220px;
+    width: 250px; /* Same size as sun */
+    height: 250px;
     right: -300px;
-    filter: drop-shadow(0 0 40px rgba(34, 211, 238, 0.4));
-    mix-blend-mode: screen;
+    filter: drop-shadow(0 0 50px rgba(34, 211, 238, 0.6));
+    clip-path: circle(50% at center);
     animation: 
         celestialAppear 1.2s ease-out forwards, 
-        moonMerge 2.8s 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        moonMerge 2.8s 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards,
+        celestialVanish 0.1s 4.0s forwards;
+}
+
+@keyframes celestialVanish {
+    to { opacity: 0; transform: scale(0.5) translateX(-50%); }
+}
+/* Re-defining sunMerge and moonMerge for precise centering */
+@keyframes sunMerge {
+    to { left: 50%; transform: translateX(-50%); }
+}
+@keyframes moonMerge {
+    to { right: 50%; transform: translateX(50%); }
 }
 
 /* Removed moon pseudo-elements */
@@ -82,19 +95,19 @@
 
 .merge-burst {
     position: absolute;
-    width: 200px;
-    height: 200px;
-    background: radial-gradient(circle, #fff 0%, #fbbf24 40%, transparent 70%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, #fff 0%, #fbbf24 30%, #ea580c 60%, transparent 80%);
     border-radius: 50%;
     opacity: 0;
     z-index: 10;
-    filter: blur(30px);
-    animation: burstEffect 1.5s 3.5s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+    filter: blur(20px);
+    animation: burstEffect 1.2s 4.0s cubic-bezier(0.2, 0, 0.2, 1) forwards;
 }
 
 @keyframes burstEffect {
     0% { transform: scale(0.1); opacity: 0; }
-    20% { opacity: 1; transform: scale(2); filter: blur(10px); }
+    30% { opacity: 1; transform: scale(2); filter: blur(5px); }
     100% { transform: scale(15); opacity: 0; filter: blur(100px); }
 }
 
@@ -105,35 +118,46 @@
     opacity: 0;
     z-index: 15;
     pointer-events: none;
-    animation: globalFlash 1s 3.6s ease-out forwards;
+    animation: globalFlash 0.8s 4.1s ease-out forwards;
 }
 
 @keyframes globalFlash {
     0% { opacity: 0; }
-    10% { opacity: 0.8; }
+    20% { opacity: 1; }
     100% { opacity: 0; }
 }
 
 .splash-logo {
     font-family: 'Permanent Marker', cursive;
-    font-size: 120px;
-    background: #ffffff;
+    font-size: 130px;
+    /* Ultra Metallic Chrome Gradient */
+    background: linear-gradient(
+        180deg,
+        #f8fafc 0%,
+        #cbd5e1 35%,
+        #64748b 45%,
+        #334155 50%,
+        #94a3b8 55%,
+        #f8fafc 65%,
+        #475569 100%
+    );
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4)) drop-shadow(0 5px 15px rgba(0, 0, 0, 0.9));
+    filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.4)) drop-shadow(0 15px 30px rgba(0, 0, 0, 0.8));
     opacity: 0;
     position: absolute;
     z-index: 20;
-    letter-spacing: 4px;
-    -webkit-text-stroke: 1px rgba(255,255,255,0.1);
+    letter-spacing: 12px;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.2);
     animation: 
-        logoFinalReveal 1.8s 3.8s cubic-bezier(0.19, 1, 0.22, 1) forwards,
+        logoFinalReveal 2s 4.6s cubic-bezier(0.19, 1, 0.22, 1) forwards,
         metalShimmer 4s infinite linear;
 }
 
 @keyframes logoFinalReveal {
-    0% { opacity: 0; transform: scale(0.5) translateY(40px); filter: blur(20px); letter-spacing: 40px; }
-    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); letter-spacing: 8px; }
+    0% { opacity: 0; transform: scale(0.7) translateY(60px); filter: blur(30px); letter-spacing: 50px; }
+    100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); letter-spacing: 12px; }
 }
 
 :root {
