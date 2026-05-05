@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
             splash.style.opacity = '0';
             setTimeout(() => splash.style.display = 'none', 1200);
         }
-    }, 5500);
+    }, 7000);
 
     if (currentUser) showApp(currentUser);
     fetchKosts();
